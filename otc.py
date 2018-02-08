@@ -115,8 +115,9 @@ for v in venders:
     v.get_price()
 
 for v in venders:
-    logger.info(u'网站:{0}-{1}'.format(v.name, v.currency))
-    print(u'场外价格:{0}'.format(v.otc_price))
-    print(u'场内价格:{0}'.format(v.market_price))
-    print(u'溢价率:{0}'.format(v.over_percent))
+    logger.info('---------------')
+    logger.info(u'{0}-{1}'.format(v.name, v.currency))
+    logger.info(u'场外价格:{0}'.format(v.otc_price))
+    logger.info(u'场内价格:{0}'.format(v.market_price))
+    logger.info(u'溢价率:{0}'.format(v.over_percent))
     
