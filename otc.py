@@ -105,10 +105,12 @@ venders = []
 
 otcbtc = OTCBTC('usdt')
 otcbtc_eth = OTCBTC('eth')
+otcbtc_eos = OTCBTC('eos')
 huobi = Huobi('usdt')
 
 venders.append(otcbtc)
 venders.append(otcbtc_eth)
+venders.append(otcbtc_eos)
 venders.append(huobi)
 
 for v in venders:
