@@ -8,26 +8,40 @@ from lxml import etree
 
 logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler(sys.stdout))
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
-r = requests.get("https://otcbtc.com/sell_offers?currency=eth&fiat_currency=cny&payment_type=all",timeout=4)
-text = r.content
 
-huobi_request = requests.get('https://otc.huobipro.com/#/trade/list?coin=2&type=1',timeout=4)
-huobi_text = huobi_request.content
+
 
 logger.debug('Done get Html')
 
-class OTCBTC:
+class Vender:
+    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
+
+    def calc_over_percent(self):
+        self.over_percent = ((self.otc_price / self.market_price) - 1 ) * 100
+
+class OTCBTC(Vender):
+    name='otcbtc'
+    url = "https://otcbtc.com/sell_offers?currency=eth&fiat_currency=cny&payment_type=all"
+    
     otc_price_xpath = '/html/body/div[2]/div/div/div[1]/div/div[1]/div[2]/div/div[1]/div[1]/div[4]/div[1]'
     market_price_xpath='/html/body/div[2]/div/div/div[2]/div/div[2]/div/span[3]'
     
+    def get_html(self):
+        r = requests.get("https://otcbtc.com/sell_offers?currency=eth&fiat_currency=cny&payment_type=all",timeout=4,headers=self.headers)
+        text = r.content
+        self.html = text
+
+    def get_price(self):
+        self.render()
      
-    def render(self, html):
-        self.tree = etree.HTML(html)
-        #self.market_price = self.get_xpath_value(self.market_price_xpath)
+    def render(self):
+        self.get_html()
+        self.tree = etree.HTML(self.html)
+        self.market_price = self.get_xpath_value(self.market_price_xpath)
         self.otc_price = self.get_xpath_value(self.otc_price_xpath)
-        #self.calc_over_percent()
+        self.calc_over_percent()
 
     def get_xpath_value(self, xpath):
         logger.debug(xpath)
@@ -39,29 +53,63 @@ class OTCBTC:
             text = element[0].text
         return float( text.strip().replace(',','').replace('CNY','').strip())
 
-    def calc_over_percent(self):
-        self.over_percent = ((self.otc_price / self.market_price) - 1 ) * 100
 
-class Huobi(OTCBTC):
-    otc_price_xpath = '//*[@id="app"]/div[3]/div/div/div[2]/div/div/div[3]/div[1]/div[1]/div[5]/div/p[1]/span'
-    market_price_xpath = '//*[@id="app"]/div[1]/div[1]/div/div[3]/span[2]'
+class Huobi(Vender):
+    name=u'火币'
+    otc_usdt_price_api = 'https://api-otc.huobi.pro/v1/otc/trade/list/public?coinId=2&tradeType=1&currentPage=1&payWay=&country=&merchant=0&online=1&range=0'
+    market_price_api = 'https://api-otc.huobi.pro/v1/otc/base/market/price'
+    coin_id=2
+
+    def get_price(self):
+        
+        data = self.get_api_json(self.otc_usdt_price_api)
+        self.otc_price = self.get_min_price(data)
+
+        market_price_data = self.get_api_json(self.market_price_api)
+        logger.debug(self.market_price_api)
+        self.market_price = self.get_market_price(market_price_data)
+
+        logger.debug(self.otc_price)
+        logger.debug(self.market_price)
+        self.calc_over_percent()
 
 
+    def get_api_json(self,url):
+        r = requests.get(url,timeout=4,headers=self.headers)
+        r_json =  r.json()
+        return r_json['data']
+        
+
+    def get_min_price(self,data):
+        price_all=[]
+        for d in data:
+            price_all.append(float(d['price']))
+        min_price = min(price_all)
+        logger.debug(min_price)
+        return min_price
+        
+    def get_market_price(self,data):
+        logger.debug('calc market price')
+        for d in data:
+            if d['coinId'] == self.coin_id:
+                return float(d['price'])
+
+        
+        
 venders = []
 
-#otcbtc = OTCBTC()
-#otcbtc.render(text)
-#
-#venders.append(otcbtc)
+otcbtc = OTCBTC()
+huobi = Huobi()
 
-huobi= Huobi()
-huobi.render(huobi_text)
+venders.append(otcbtc)
 venders.append(huobi)
 
+for v in venders:
+    v.get_price()
 
-
-for i in venders:
-    print(u'场外价格:{0}'.format(i.otc_price))
-    print(u'场内价格:{0}'.format(i.market_price))
-    print(u'溢价率:{0}'.format(i.over_percent))
+for v in venders:
+    logger.info(u'网站:{0}'.format(v.name))
+    print(u'场外价格:{0}'.format(v.otc_price))
+    print(u'场内价格:{0}'.format(v.market_price))
+    print(u'溢价率:{0}'.format(vover_percent))
     
