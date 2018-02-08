@@ -111,5 +111,5 @@ for v in venders:
     logger.info(u'网站:{0}'.format(v.name))
     print(u'场外价格:{0}'.format(v.otc_price))
     print(u'场内价格:{0}'.format(v.market_price))
-    print(u'溢价率:{0}'.format(vover_percent))
+    print(u'溢价率:{0}'.format(v.over_percent))
     
