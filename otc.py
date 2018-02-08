@@ -23,13 +23,13 @@ class Vender:
 
 class OTCBTC(Vender):
     name='otcbtc'
-    url = "https://otcbtc.com/sell_offers?currency=eth&fiat_currency=cny&payment_type=all"
+    url = "https://otcbtc.com/sell_offers?currency=usdt&fiat_currency=cny&payment_type=all"
     
     otc_price_xpath = '/html/body/div[2]/div/div/div[1]/div/div[1]/div[2]/div/div[1]/div[1]/div[4]/div[1]'
     market_price_xpath='/html/body/div[2]/div/div/div[2]/div/div[2]/div/span[3]'
     
     def get_html(self):
-        r = requests.get("https://otcbtc.com/sell_offers?currency=eth&fiat_currency=cny&payment_type=all",timeout=4,headers=self.headers)
+        r = requests.get(self.url,timeout=4,headers=self.headers)
         text = r.content
         self.html = text
 
