@@ -59,6 +59,7 @@ class Huobi(Vender):
     market_price_api = 'https://api-otc.huobi.pro/v1/otc/base/market/price'
 
     def __init__(self,currency):
+        self.currency = currency
         if currency == 'usdt':
             self.coin_id = 2
             self.otc_price_api = 'https://api-otc.huobi.pro/v1/otc/trade/list/public?coinId={0}&tradeType=1&currentPage=1&payWay=&country=&merchant=0&online=1&range=0'.format(self.coin_id)
@@ -114,7 +115,7 @@ for v in venders:
     v.get_price()
 
 for v in venders:
-    logger.info(u'网站:{0}'.format(v.name))
+    logger.info(u'网站:{0}-{1}'.format(v.name, v.currency))
     print(u'场外价格:{0}'.format(v.otc_price))
     print(u'场内价格:{0}'.format(v.market_price))
     print(u'溢价率:{0}'.format(v.over_percent))
