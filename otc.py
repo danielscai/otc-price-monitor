@@ -11,10 +11,6 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 logger.setLevel(logging.INFO)
 
 
-
-
-logger.debug('Done get Html')
-
 class Vender:
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
 
@@ -23,10 +19,14 @@ class Vender:
 
 class OTCBTC(Vender):
     name='otcbtc'
-    url = "https://otcbtc.com/sell_offers?currency=usdt&fiat_currency=cny&payment_type=all"
+    currency=None
     
     otc_price_xpath = '/html/body/div[2]/div/div/div[1]/div/div[1]/div[2]/div/div[1]/div[1]/div[4]/div[1]'
     market_price_xpath='/html/body/div[2]/div/div/div[2]/div/div[2]/div/span[3]'
+
+    def __init__(self, currency):
+        self.currency = currency 
+        self.url = "https://otcbtc.com/sell_offers?currency={0}&fiat_currency=cny&payment_type=all".format(currency)
     
     def get_html(self):
         r = requests.get(self.url,timeout=4,headers=self.headers)
@@ -56,13 +56,17 @@ class OTCBTC(Vender):
 
 class Huobi(Vender):
     name=u'火币'
-    otc_usdt_price_api = 'https://api-otc.huobi.pro/v1/otc/trade/list/public?coinId=2&tradeType=1&currentPage=1&payWay=&country=&merchant=0&online=1&range=0'
     market_price_api = 'https://api-otc.huobi.pro/v1/otc/base/market/price'
-    coin_id=2
+
+    def __init__(self,currency):
+        if currency == 'usdt':
+            self.coin_id = 2
+            self.otc_price_api = 'https://api-otc.huobi.pro/v1/otc/trade/list/public?coinId={0}&tradeType=1&currentPage=1&payWay=&country=&merchant=0&online=1&range=0'.format(self.coin_id)
+
 
     def get_price(self):
         
-        data = self.get_api_json(self.otc_usdt_price_api)
+        data = self.get_api_json(self.otc_price_api)
         self.otc_price = self.get_min_price(data)
 
         market_price_data = self.get_api_json(self.market_price_api)
@@ -98,10 +102,12 @@ class Huobi(Vender):
         
 venders = []
 
-otcbtc = OTCBTC()
-huobi = Huobi()
+otcbtc = OTCBTC('usdt')
+otcbtc_eth = OTCBTC('eth')
+huobi = Huobi('usdt')
 
 venders.append(otcbtc)
+venders.append(otcbtc_eth)
 venders.append(huobi)
 
 for v in venders:
